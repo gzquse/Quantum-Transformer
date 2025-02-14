@@ -1032,6 +1032,7 @@ def generate_plots_from_checkpoint(
 def iterate_generations(
     checkpoint_path: str,
     save_path: str,
+    training_data_path: Optional[str] = None,
     choose_best_val_epoch: bool = True,
     property_variation_factor: float = 2,
     central_tendency: str = "mean",
@@ -1048,6 +1049,7 @@ def iterate_generations(
     Args:
         checkpoint_path (str): Path to the model checkpoint.
         save_path (str): Path to save the generated SMILES strings.
+        training_data_path (Optional[str]): Path to the training data CSV file. Used for property imputation and novelty checks. If not provided, the training data from the checkpoint train_id will be used.
         choose_best_val_epoch (bool): Choose the best validation epoch for evaluation for any previous epoch.
         property_variation_factor (float): Factor to vary the properties.
         central_tendency (str): Central tendency for property variation, either 'mean' or 'median'.
@@ -1064,12 +1066,16 @@ def iterate_generations(
 
     checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
 
-    training_data_path = f"./training_splits/train_dataset_{checkpoint['training_configuration']['train_id']}.csv"
-    if not os.path.exists(training_data_path):
-        logger.error(f"Training data not found at {training_data_path}")
-        raise FileNotFoundError(
-            f"Training data not found at {training_data_path}. Was the split training data for this training moved?"
-        )
+    if training_data_path is None:
+        specified_training_data = f"./training_splits/train_dataset_{checkpoint['training_configuration']['train_id']}.csv"
+    
+        if not os.path.exists(specified_training_data):
+            logger.error(f"Training data not found at {specified_training_data}")
+            raise FileNotFoundError(
+                f"Training data not found at {specified_training_data}. Was the split training data for this training moved?"
+            )
+    else:
+        specified_training_data = training_data_path
 
     def _configure_quantum_target(
         device: Union[str, torch.device], qpu_count: int

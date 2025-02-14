@@ -129,6 +129,7 @@ def run_inference(model_type, mode):
     iterate_generations(
         checkpoint_path=checkpoint_path,
         save_path=f"./reproduced_results/{model_type}_{mode}_results/",
+        training_data_path="./dataset/train_dataset.csv",
     )
 
     print(
