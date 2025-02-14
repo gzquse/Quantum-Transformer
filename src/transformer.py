@@ -8,8 +8,8 @@ from rdkit import Chem
 from torch import Tensor, nn
 from torch.utils.data import Dataset
 
-from quantum_transformer_src.quantum_layer import AttentionQuantumLayer
-from quantum_transformer_src.utils import get_physchem_properties, scale_to_range
+from src.quantum_layer import AttentionQuantumLayer
+from src.utils import get_physchem_properties, scale_to_range
 
 
 class Transformer_Dataset(Dataset):

@@ -12,8 +12,8 @@ from torch.utils.data import random_split
 from torchdata.stateful_dataloader import StatefulDataLoader
 from tqdm import tqdm
 
-from quantum_transformer_src.transformer import Transformer_Dataset, Transformer_Model
-from quantum_transformer_src.utils import get_physchem_properties
+from src.transformer import Transformer_Dataset, Transformer_Model
+from src.utils import get_physchem_properties
 
 # Configure logging
 logging.basicConfig(

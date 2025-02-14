@@ -7,11 +7,11 @@ from cudaq import spin
 from torch import Tensor, nn
 from torch.autograd import Function
 
-from quantum_transformer_src.unitary_library import (
+from src.unitary_library import (
     build_physchem_embeddings_circuit,
     build_sequence_only_circuit,
 )
-from quantum_transformer_src.utils import prepare_attention_inputs, remove_redundant_circuits, repopulate_tensor
+from src.utils import prepare_attention_inputs, remove_redundant_circuits, repopulate_tensor
 
 
 class AttentionQuantumLayer(nn.Module):

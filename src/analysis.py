@@ -1,4 +1,3 @@
-import csv
 import logging
 import os
 from typing import List, Optional, Tuple, Union
@@ -17,8 +16,8 @@ from torch.nn import functional as F
 from torchdata.stateful_dataloader import StatefulDataLoader
 from tqdm import tqdm
 
-from quantum_transformer_src.transformer import Transformer_Dataset, Transformer_Model
-from quantum_transformer_src.utils import get_physchem_properties
+from src.transformer import Transformer_Dataset, Transformer_Model
+from src.utils import get_physchem_properties
 
 # Configure logging
 logging.basicConfig(
