@@ -1033,9 +1033,9 @@ def iterate_generations(
     checkpoint_path: str,
     save_path: str,
     choose_best_val_epoch: bool = True,
-    property_variation_factor: float = 1.5,
-    central_tendency: str = "median",
-    variation: str = "iqr",
+    property_variation_factor: float = 2,
+    central_tendency: str = "mean",
+    variation: str = "std",
     imputation_method: str = "knn",
     num_samples: int = 100000,
     sampling_batch_size: int = 25000,
@@ -1043,7 +1043,7 @@ def iterate_generations(
     qpu_count: int = -1,
 ) -> None:
     """
-    Sample molecules according to different property conditions. This function will iteratively call the `generate_smiles` function to sample molecules based on properties within the training distribution and outside the training distribution by central_tendency +/- property_variation_factor * variation. This function saves the generated SMILES strings to CSV files, as well as a summary CSV file with the average validity, uniqueness, novelty, and property values of the generated SMILES strings. The summary of results is saved to "combined_results.csv".
+    Sample molecules according to different property conditions. This function will iteratively call the `generate_smiles` function to sample molecules based on properties within the training distribution and outside the training distribution by central_tendency +/- property_variation_factor * variation. This function saves the generated SMILES strings to CSV files, as well as a summary CSV file with the average validity, uniqueness, novelty, and property values of the generated SMILES strings. The summary of results is saved to "OVERALL_SAMPLING_RESULTS.csv".
 
     Args:
         checkpoint_path (str): Path to the model checkpoint.
@@ -1234,7 +1234,7 @@ def iterate_generations(
             sampled_averages.append(df[prop_name].mean())
 
     # Save combined CSV summary
-    output_file = os.path.join(save_path, "combined_sampling_results.csv")
+    output_file = os.path.join(save_path, "OVERALL_SAMPLING_RESULTS.csv")
 
     # Pad the property_names and no_conditions_mean lists if needed
     # This is just so that we can put in the no_conditions_mean data in the CSV off
