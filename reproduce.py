@@ -29,9 +29,9 @@ def generate_figures():
     print("Generating figures from pre-trained models...")
 
     generate_plots_from_checkpoint(
-        quantum_checkpoint_path="./model_checkpoints/quantum_sequence/model_epoch_17.pt",
-        classical_checkpoint_path="./model_checkpoints/classical_sequence/model_epoch_17.pt",
-        classical_equal_param_checkpoint_path="./model_checkpoints/classical_eq_sequence/model_epoch_16.pt",
+        quantum_checkpoint_path="./model_checkpoints/quantum_sequence/model_epoch_20.pt",
+        classical_checkpoint_path="./model_checkpoints/classical_sequence/model_epoch_20.pt",
+        classical_equal_param_checkpoint_path="./model_checkpoints/classical_eq_sequence/model_epoch_20.pt",
         plot_train_losses=True,
         plot_val_losses=False,
         rolling_average=False,
@@ -43,9 +43,9 @@ def generate_figures():
     print("Saved ./reproduced_figures/sequence_only_training_losses.png")
 
     generate_plots_from_checkpoint(
-        quantum_checkpoint_path="./model_checkpoints/quantum_sequence/model_epoch_17.pt",
-        classical_checkpoint_path="./model_checkpoints/classical_sequence/model_epoch_17.pt",
-        classical_equal_param_checkpoint_path="./model_checkpoints/classical_eq_sequence/model_epoch_16.pt",
+        quantum_checkpoint_path="./model_checkpoints/quantum_sequence/model_epoch_20.pt",
+        classical_checkpoint_path="./model_checkpoints/classical_sequence/model_epoch_20.pt",
+        classical_equal_param_checkpoint_path="./model_checkpoints/classical_eq_sequence/model_epoch_20.pt",
         plot_train_losses=False,
         plot_val_losses=True,
         rolling_average=True,
@@ -58,8 +58,8 @@ def generate_figures():
 
     generate_plots_from_checkpoint(
         quantum_checkpoint_path="./model_checkpoints/quantum_conditions/model_epoch_20.pt",
-        classical_checkpoint_path="./model_checkpoints/classical_conditions/model_epoch_15.pt",
-        classical_equal_param_checkpoint_path="./model_checkpoints/classical_eq_conditions/model_epoch_17.pt",
+        classical_checkpoint_path="./model_checkpoints/classical_conditions/model_epoch_20.pt",
+        classical_equal_param_checkpoint_path="./model_checkpoints/classical_eq_conditions/model_epoch_20.pt",
         plot_train_losses=True,
         plot_val_losses=False,
         rolling_average=False,
@@ -72,8 +72,8 @@ def generate_figures():
 
     generate_plots_from_checkpoint(
         quantum_checkpoint_path="./model_checkpoints/quantum_conditions/model_epoch_20.pt",
-        classical_checkpoint_path="./model_checkpoints/classical_conditions/model_epoch_15.pt",
-        classical_equal_param_checkpoint_path="./model_checkpoints/classical_eq_conditions/model_epoch_17.pt",
+        classical_checkpoint_path="./model_checkpoints/classical_conditions/model_epoch_20.pt",
+        classical_equal_param_checkpoint_path="./model_checkpoints/classical_eq_conditions/model_epoch_20.pt",
         plot_train_losses=False,
         plot_val_losses=True,
         rolling_average=True,

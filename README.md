@@ -27,6 +27,8 @@ pip install cudaq==0.9.1 rdkit==2024.9.4 torch==2.5.1+cu121 torchvision torchaud
 
 This repository provides a script, `reproduce.py`, to facilitate the reproduction of key results from the paper, including model training, figure generation, and inference.
 
+The trained checkpoint files for the best and last (20th) epoch for each models are located in `model_checkpoints/`. The figures and inference reproducability functions uses these models to recreate the data from the paper.
+
 ### **1. Generate Figures**
 To generate figures used in the paper, use the --figures flag.
 ```sh
