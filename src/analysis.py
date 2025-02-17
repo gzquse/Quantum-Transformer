@@ -1068,7 +1068,7 @@ def iterate_generations(
 
     if training_data_path is None:
         specified_training_data = f"./training_splits/train_dataset_{checkpoint['training_configuration']['train_id']}.csv"
-    
+
         if not os.path.exists(specified_training_data):
             logger.error(f"Training data not found at {specified_training_data}")
             raise FileNotFoundError(

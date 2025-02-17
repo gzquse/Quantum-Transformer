@@ -11,7 +11,11 @@ from src.unitary_library import (
     build_physchem_embeddings_circuit,
     build_sequence_only_circuit,
 )
-from src.utils import prepare_attention_inputs, remove_redundant_circuits, repopulate_tensor
+from src.utils import (
+    prepare_attention_inputs,
+    remove_redundant_circuits,
+    repopulate_tensor,
+)
 
 
 class AttentionQuantumLayer(nn.Module):
