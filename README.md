@@ -72,3 +72,30 @@ python reproduce.py --train-models --model <MODEL_TYPE> --mode <MODE>
 
 ## Usage
 A notebook tutorial can be found here (LINK) and documentation on available functions can be found in `docs/`.
+
+If using Perlmutter or a SLURM-based cluster, the following example job script ensures the highest level of performance currently supported (1 node, 4 GPUs):
+
+```sh
+#!/bin/bash
+#SBATCH -N 1                       # Use 1 node
+#SBATCH --ntasks-per-node=1        # Run a single task
+#SBATCH --gpus-per-task=4          # Use 4 GPUs for the task
+#SBATCH -t 48:00:00                # Max runtime
+#SBATCH -q regular                 # Queue
+#SBATCH -A replace_with_account    # Allocation account
+#SBATCH -C gpu                     # Use GPU nodes
+
+# Load Conda module
+module load conda
+
+# Activate your Conda environment
+conda activate cuda_quantum_transformer_env
+
+# Run the Python script
+python my_example_script.py
+```
+
+Save the above script and submit the job:
+```sh
+sbatch quantum_transformer_example_job.sh
+```
