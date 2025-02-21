@@ -663,10 +663,6 @@ def train_model(
                 logits, _ = model(x, physchem_props)
                 loss = loss_function(logits.view(-1, logits.size(-1)), y.view(-1))
 
-            # if batch_id < 5:
-            #    print(loss)
-            #    print(x)
-
             scaler.scale(loss).backward()
 
             # Per-layer Gradient clipping

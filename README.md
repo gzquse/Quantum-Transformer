@@ -1,5 +1,9 @@
 # A Hybrid Transformer Architecture with a Quantized Self-Attention Mechanism Applied to Molecular Generation.
 
+## Summary
+The success of the self-attention mechanism in classical machine learning models has inspired the development of quantum analogs aimed at reducing computational overhead. Self-attention integrates learnable query and key matrices to calculate attention scores between all pairs of tokens in a sequence that are then multiplied with a learnable value matrix to obtain the output self-attention matrix, enabling the model effectively capture long-range dependencies within the input sequence. Here, we propose a hybrid quantum-classical self-attention mechanism as part of a transformer decoder, the architecture underlying Large Language Models (LLMs). To demonstrate its utility in chemistry, we train this model on the QM9 dataset for conditional generation, providing SMILES strings as input, each labeled with a set of physicochemical properties that serve as conditions during inference. Our theoretical analysis shows that the time complexity of the query-key dot product is reduced from $\mathcal{O}(n^2 d)$ in a classical model to $\mathcal{O}(n^2\log d)$ in our quantum model, where $n$  and $d$ represent the sequence length and embedding dimension, respectively. We perform simulations using NVIDIA's CUDA-Q platform, which is designed for efficient GPU scalability. This work provides an avenue for quantum-enhanced Natural Language Processing (NLP).
+
+![alt text](abstract_figure.png)
 ## Installation
 
 To reproduce the results from this repository, you can set up your environment using **Conda** or **pip**.
