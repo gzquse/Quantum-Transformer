@@ -13,6 +13,8 @@ valid, unique, novel = generate_smiles(
     choose_best_val_epoch=True,
     num_of_model_queries=1000,
     sampling_batch_size=250,
+    imputation_dataset_path="./dataset/train_dataset.csv",
+    dataset_novelty_check_path="./dataset/train_dataset.csv",
     device="gpu",
 )
 ```
@@ -42,6 +44,8 @@ generate_smiles(
     save_dir="./generated_molecules/classical_example_conditions_MW_120.csv",
     num_of_model_queries=1000,
     sampling_batch_size=250,
+    imputation_dataset_path="./dataset/train_dataset.csv",
+    dataset_novelty_check_path="./dataset/train_dataset.csv",
     device="gpu",
     MW=120,
 )
