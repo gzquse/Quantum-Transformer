@@ -3,6 +3,34 @@
 ## **Description**
 We can call the `generate_smiles` function to perform inference on our trained model. The output is the validity, uniqueness, and novelty percentages for the generated sequences. Valid sequences are those where the resulting string can be successfully parsed by RDKit. Novel SMILES strings are those which do not appear in the training set.
 
+## **Parameters**
+- checkpoint_path (str): Path to the model checkpoint.
+- save_dir (str): Path to save the generated SMILES strings.
+- choose_best_val_epoch (bool, default=True): Choose the best validation epoch for evaluation from any - previous epoch.
+- num_of_model_queries (int, default=100000): Number of attempts to generate SMILES strings.
+- sampling_batch_size (int, default=10000): Batch size for sampling.
+- MW (Union[float, np.float64], default=np.nan): Molecular weight for conditional sampling.
+- HBA (Union[float, np.float64], default=np.nan): Hydrogen bond acceptors for conditional sampling.
+- HBD (Union[float, np.float64], default=np.nan): Hydrogen bond donors for conditional sampling.
+- nRot (Union[float, np.float64], default=np.nan): Number of rotatable bonds for conditional sampling.
+- nRing (Union[float, np.float64], default=np.nan): Number of rings for conditional sampling.
+- nHet (Union[float, np.float64], default=np.nan): Number of heteroatoms for conditional sampling.
+- TPSA (Union[float, np.float64], default=np.nan): Topological polar surface area for conditional sampling.
+- LogP (Union[float, np.float64], default=np.nan): LogP for conditional sampling.
+- StereoCenters (Union[float, np.float64], default=np.nan): Number of stereocenters for conditional sampling.
+- imputation_method (str, default="knn"): Imputation method for missing physicochemical properties.
+- imputation_dataset_path (Optional[str], default=None): Path to the imputation dataset. Defaults to the - training dataset specified by the train_id from the checkpoint.
+- dataset_novelty_check_path (Optional[str], default=None): Path to the dataset for novelty check. Defaults - to the training dataset specified by the train_id from the checkpoint.
+- device (Union[str, torch.device], default="gpu"): Device for sampling ("cpu" or "gpu").
+- qpu_count (int, default=-1): Number of GPUs to use (-1 = all available GPUs).
+
+## **Returns**
+Tuple[float, float, float]: A tuple containing:
+
+- Average validity of the generated SMILES strings.
+- Average uniqueness of the generated SMILES strings.
+- Average novelty of the generated SMILES strings.
+
 ## **Usage**
 ```python
 from src.analysis import generate_smiles

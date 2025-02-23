@@ -75,7 +75,7 @@ python reproduce.py --train-models --model <MODEL_TYPE> --mode <MODE>
 
 
 ## Usage
-A notebook tutorial can be found here (LINK) and documentation on available functions can be found in `docs/`.
+A notebook tutorial can be found here (coming soon) and documentation on available functions can be found in `docs/`.
 
 If using Perlmutter or a SLURM-based cluster, the following example job script ensures the highest level of performance currently supported (1 node, 4 GPUs):
 
