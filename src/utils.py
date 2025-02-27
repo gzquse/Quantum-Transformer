@@ -159,7 +159,7 @@ def remove_redundant_circuits(
     Optimizes quantum circuit execution by eliminating redundant evaluations.
 
     Unlike classical GPUs, where calculating a full attention matrix and applying a mask is efficient,
-    in this case it is more efficent to only run quantum simulations that calculate the lower triangle and diagonal explicitly.
+    in this case it is more efficient to only run quantum simulations that calculate the lower triangle and diagonal explicitly.
     Additionally, duplicate circuits (identical parameter sets) are removed to minimize redundant computations.
 
     Args:

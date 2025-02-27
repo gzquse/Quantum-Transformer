@@ -169,7 +169,7 @@ def controlled_unitary(
                 x.ctrl(control, qubits[i], qubits[start])  # type: ignore  # noqa: F821
 
 
-# This quantum circuit only include token and positional encodings as shown in Figure 3
+# This quantum circuit only include token and positional encodings as shown in Figure 4
 @cudaq.kernel
 def build_sequence_only_circuit(
     token_i: list[float],

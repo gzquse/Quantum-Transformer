@@ -147,7 +147,7 @@ class AttentionQuantumLayer(nn.Module):
         # Note that it is not 1/sqrt(dk) and is instead sqrt(dk). We need to maintain a variance of 1 on a hypersphere.
         scale_factor = np.sqrt(C)
 
-        # The output of AttentionQuantumFunction is batch of already masked attention matices (pairwise dot products).
+        # The output of AttentionQuantumFunction is batch of already masked attention matrices (pairwise dot products).
         attn_weight = (
             AttentionQuantumFunction.apply(
                 circuit_parameters,

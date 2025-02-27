@@ -321,7 +321,7 @@ class Transformer_Model(nn.Module):
 
             - Since the value matrix in the attention mechanism is computed classically in all models,
               we need to create a separate set of token/position/physicochemical embeddings with reduced dimensionality
-              so they can propogate to the reduced dimensionality query/key matrices.
+              so they can propagate to the reduced dimensionality query/key matrices.
         """
 
         # Get the batch size and sequence length
