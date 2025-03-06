@@ -5,7 +5,7 @@ The success of the self-attention mechanism in classical machine learning models
 
 ![alt text](abstract_figure.png)
 
-The pre-print of this work can be found at [https://arxiv.org/abs/2502.19214](https://arxiv.org/abs/2502.19214).
+The pre-print of this work can be found at [https://arxiv.org/abs/2502.19214](https://arxiv.org/abs/2502.19214). A tutorial can be found on NVIDIA's [CUDA-Q Applications page](https://nvidia.github.io/cuda-quantum/latest/applications/python/quantum_transformer.html).
 ## Installation
 
 To reproduce the results from this repository, you can set up your environment using **Conda** or **pip**.
