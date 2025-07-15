@@ -142,9 +142,9 @@ if __name__=="__main__":
     fig0=10 if expMD['postproc']['hw_calib']=='auto' else 1
    
     if 'a' in args.showPlots:
-        plot.ehands_accuracy(expD,expMD,figId=fig0)
+        plot.ehands_accuracy(expD,expMD,figId=fig0, showSummary=True)
     if 'b' in args.showPlots:
-        plot.ehands_accuracy(expD,expMD,figId=fig0+1,asCol=True)
+        plot.ehands_accuracy(expD,expMD,figId=fig0+1,asCol=True, showSummary=True)
 
     if 'c' in args.showPlots:
         plot.truth_only(expD,expMD,figId=2)
