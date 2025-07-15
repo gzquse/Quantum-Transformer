@@ -1,0 +1,6 @@
+#!/bin/bash
+
+module load conda
+conda activate $SCRATCH/cudaq
+
+export basePath="/pscratch/sd/g/gzquse/quantum-transformer/out"
