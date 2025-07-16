@@ -5,7 +5,7 @@ set -e ;  #  bash exits if any statement returns a non-true return value
 
 stop-me
 
-basePath=../paper_AAAI25/data/
+basePath=../paper_AAAI25/data2/
 nSamp=30
 
 backN=ibm_fez
