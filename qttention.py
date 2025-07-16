@@ -206,7 +206,7 @@ def quantum_dot_product_vectorized(Q, K):
     
     # Sum over features to get dot products
     # Only take the first total_pairs results (ignore padding)
-    dot_products = np.sum(element_products, axis=1)
+    dot_products = np.sum(element_products[:total_pairs], axis=1)
     
     # Reshape back to attention matrix format
     attention_scores = torch.tensor(dot_products).view(batch, seq_len, seq_len)
