@@ -14,12 +14,14 @@ Output:  raw  yields + meta data
 import time,os,sys
 from pprint import pprint
 import numpy as np
+sys.path.append(os.path.abspath("../cloud_job/"))
+
 from toolbox.Util_H5io4 import  read4_data_hdf5, write4_data_hdf5
 from qiskit_ibm_runtime import QiskitRuntimeService
 
 from time import time, sleep
 from toolbox.Util_QiskitV2 import pack_counts_to_numpy
-from submit_ibmq_job import harvest_sampler_results
+from submit_multXY_job import harvest_sampler_results
 
 import argparse
 def get_parser():
@@ -63,7 +65,7 @@ if __name__ == "__main__":
     # ------  construct sampler-job w/o backend ------
     print('M: activate QiskitRuntimeService() ...')
     service = QiskitRuntimeService() # correct way
-   
+    
     print('M: retrieve jid:',jid)
     job=service.job(jid)
     T0=time()
@@ -86,7 +88,7 @@ if __name__ == "__main__":
     write4_data_hdf5(expD,outF,expMD)
 
 
-    print('   ./postproc_qcrank.py   --basePath  $basePath --expName   %s   -p a    -Y\n'%(expMD['short_name']))
+    print('   ./postproc_multXY.py   --basePath  $basePath --expName   %s   -p a    -Y\n'%(expMD['short_name']))
   
     
     

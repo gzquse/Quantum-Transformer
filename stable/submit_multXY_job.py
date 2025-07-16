@@ -13,7 +13,7 @@ Dependence:  qiskit 1.2
 
 
 Use case:
-./submit_ibmq_job.py -E  --numQubits 3 3 --numSample 15 --numShot 8000  --backend   ibm_brussels  
+./submit_ibmq_job.py -E  --numQaddr 3 --numSample 15 --numShot 8000  --backend   ibm_brussels  
 
 
 '''
@@ -26,10 +26,9 @@ from datetime import datetime, timezone
 from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2 as Sampler 
 from qiskit_ibm_runtime.options.sampler_options import SamplerOptions
 
-sys.path.append(os.path.abspath("../cloud_job/"))
 from toolbox.Util_IOfunc import dateT2Str, iso_to_localtime
 from toolbox.Util_H5io4 import  write4_data_hdf5, read4_data_hdf5
-from toolbox.Util_QiskitV2 import  circ_depth_aziz, harvest_circ_transpMeta
+from toolbox.Util_QiskitV2 import  circ_depth_aziz, harvest_circ_transpMeta, export_QPY_circs
 from qiskit_aer import AerSimulator
 from qiskit import transpile
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
@@ -47,7 +46,7 @@ def commandline_parser(backName="aer_ideal",provName="local_sim"):
     parser.add_argument("--expName",  default=None,help='(optional) replaces IBMQ jobID assigned during submission by users choice')
  
     # .... QCrank speciffic
-    parser.add_argument('-q','--numQaddr', default=2, type=int,  help='nq_addr ')
+    parser.add_argument('-q','--numQaddr', default=3, type=int,  help='nq_addr ')
     parser.add_argument('-i','--numSample', default=10, type=int, help='num of images packed in to the job')
     parser.add_argument('--rndSeed', default=None, type=int, help='(optional) freezes randominput sequence')
     
@@ -62,7 +61,8 @@ def commandline_parser(backName="aer_ideal",provName="local_sim"):
 
     parser.add_argument( "-B","--noBarrier", action='store_true', default=False, help="remove all bariers from the circuit ")
     parser.add_argument( "-E","--executeCircuit", action='store_true', default=False, help="may take long time, test before use ")
- 
+    parser.add_argument( "-e","--exportQPY", action='store_true', default=False, help="exprort parametrized circuit as QPY ")
+    
     '''there are 3 types of backend
     - run by local Aer:  ideal  or  fake_kyoto
     - submitted to IBM: ibm_kyoto
@@ -96,7 +96,7 @@ def buildPayloadMeta(args):
     
     tmd={}
     tmd['transp_seed']=args.transpSeed
-    
+    print('ddd', 'ibm' in args.backend,args.backend)
     if 'ibm' in args.backend: 
         sbm['random_compilation']= args.useRC
         sbm['dynamical_decoupling']= args.useDD
@@ -174,16 +174,17 @@ def construct_random_inputs(md,verb=1, seed=None):
         data_inp = sample_xy(num_addr, n_img)
     else: # x, y separately are uniform in [-1,1]
         data_inp = np.random.uniform(-1, 1., size=(num_addr, nq_data, n_img))
+   
+    if verb>2:
+        print('input data=',data_inp.shape,repr(data_inp))
 
     true_output=data_inp[:,0]*data_inp[:,1]
-
-    if verb>2:
-        print('input data=',data_inp.shape,repr(data_inp[:,0]), repr(data_inp[:,1]))
-        print('true output=',true_output.shape,repr(true_output))
     #print('data_inp sample:\n',data_inp[:3,:3,:2],'\nprod:',true_output); kk
     bigD={'inp_udata': data_inp,'true_output':true_output}
  
     return bigD
+
+
 
 #...!...!....................
 def harvest_sampler_results(job,md,bigD,T0=None):  # many circuits
@@ -201,17 +202,17 @@ def harvest_sampler_results(job,md,bigD,T0=None):  # many circuits
 
     else:
         jobMetr=job.metrics()
-        #print('HSR:jobMetr:',jobMetr)
+        print('HSR:jobMetr:',jobMetr)
         #print('tt',jobMetr['timestamps']['running'])
         t1=iso_to_localtime((jobMetr['timestamps']['running']))
         qa['timestamp_running']=dateT2Str(t1)
         qa['quantum_seconds']=jobMetr['usage']['quantum_seconds']
-        qa['all_circ_executions']=jobMetr['executions']
+        #qa['all_circ_executions']=jobMetr['executions']
         
-        if jobMetr['num_circuits']>0:
-            qa['one_circ_depth']=jobMetr['circuit_depths'][0]
-        else:
-            qa['one_circ_depth']=None
+        #if jobMetr['num_circuits']>0:
+        #    qa['one_circ_depth']=jobMetr['circuit_depths'][0]
+        #else:
+        #    qa['one_circ_depth']=None
                 
     #1pprint(jobRes[0])
     nCirc=len(jobRes)  # number of circuit in the job
@@ -245,21 +246,19 @@ if __name__ == "__main__":
     np.set_printoptions(precision=3)
     expMD=buildPayloadMeta(args)
    
-    pprint(expMD)
+    pprint(expMD) 
     expD=construct_random_inputs(expMD)
-         
+
     # generate parametric circuit
     nq_addr, nq_data = args.numQubits
     qcrankObj = QCrankV2( nq_addr, nq_data,measure=False,barrier=not args.noBarrier )    
     qcP=qcrankObj.circuit  # parametrized raw qcrank circuit
-
    
-    #... attached EHands mutiplier on last 2 data qubits, result will be on the 1st data qubit
+    #... attached EHands mutiplier on last 2 data qubits, result will be on the 2nd data qubit
     if not args.noBarrier: qcP.barrier()
     nqa=expMD['payload']['nq_addr']
-    qa0=nqa
-    qcP.rz(np.pi/2,qa0+1)
-    qcP.cx(qa0,qa0+1)
+    qcP.rz(np.pi/2,nqa+1)
+    qcP.cx(nqa,nqa+1)
     if not args.noBarrier: qcP.barrier()
     #.... assemble final circuit
     qra = QuantumRegister(nqa,'a')
@@ -269,17 +268,21 @@ if __name__ == "__main__":
     qcP=qc1.compose(qcP)
     qcP.measure(qrd[1],0)
     for i in range(nqa):     qcP.measure(qra[i],nqa-i)  # order must be reversed
-    
+
+    #... pass new circuit and fix meta-data
     qcrankObj.circuit=qcP
     expMD['payload']['nq_data']=1 # patch decoder to look for just 1 data qubit
- 
-    
+     
     cxDepth=qcP.depth(filter_function=lambda x: x.operation.name == 'cx')
     print('.... PARAMETRIZED IDEAL CIRCUIT .............., cx-depth=%d'%cxDepth)
     nqTot=qcP.num_qubits
     print('M: ideal gates count:', qcP.count_ops())
     if args.verb>2 or nq_addr<4:  print(qcP.draw())
-    
+
+    if args.exportQPY:
+        export_QPY_circs(qcP,expMD,args,outPath='out/')
+        exit(0)
+
     # ------  construct sampler(.) job ------
     runLocal=True  # ideal or fake backend
     outPath=os.path.join(args.basePath,'meas') 
@@ -288,7 +291,7 @@ if __name__ == "__main__":
         transBackN='ideal'
         backend = AerSimulator()
     else:
-        print('M: activate QiskitRuntimeService() ...')
+        print('M: activate QiskitRuntimeService() ... backedn:',args.backend)
         service = QiskitRuntimeService()
         if  'fake' in args.backend:
             transBackN=args.backend.replace('fake_','ibm_')
@@ -301,15 +304,7 @@ if __name__ == "__main__":
             backend = service.backend(args.backend)  # overwrite ideal-backend
             print('use true HW backend =', backend.name)          
             runLocal=False
-        if 0:  # special case
-            print('\nM: scan over transpiler  for %s :'%args.backend)            
-            for i in range(10):
-                seed=args.transpSeed+i
-                qcT= transpile(qcP, backend=backend, optimization_level=3, seed_transpiler=seed)
-                layout=qcT._layout.final_index_layout(filter_ancillas=True)
-                print('seed=%d  qubits=%s '%(seed,layout))
-            exit(0)
-
+ 
         qcT =  transpile(qcP, backend,optimization_level=3, seed_transpiler=args.transpSeed)
         qcrankObj.circuit=qcT  # pass transpiled parametric circuit back
         cxDepth=qcT.depth(filter_function=lambda x: x.operation.name == 'cz')
@@ -382,6 +377,7 @@ if __name__ == "__main__":
         write4_data_hdf5(expD,outF,expMD)
         print('   ./retrieve_ibmq_job.py  --basePath  $basePath --expName   %s   \n'%(expMD['short_name'] ))
 
+    
 
 
     
