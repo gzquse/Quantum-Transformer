@@ -47,7 +47,7 @@ def commandline_parser(backName="aer_ideal",provName="local_sim"):
     parser.add_argument("--expName",  default=None,help='(optional) replaces IBMQ jobID assigned during submission by users choice')
  
     # .... QCrank speciffic
-    parser.add_argument('-q','--numQaddr', default=3, type=int,  help='nq_addr ')
+    parser.add_argument('-q','--numQaddr', default=2, type=int,  help='nq_addr ')
     parser.add_argument('-i','--numSample', default=10, type=int, help='num of images packed in to the job')
     parser.add_argument('--rndSeed', default=None, type=int, help='(optional) freezes randominput sequence')
     
@@ -174,17 +174,16 @@ def construct_random_inputs(md,verb=1, seed=None):
         data_inp = sample_xy(num_addr, n_img)
     else: # x, y separately are uniform in [-1,1]
         data_inp = np.random.uniform(-1, 1., size=(num_addr, nq_data, n_img))
-   
-    if verb>2:
-        print('input data=',data_inp.shape,repr(data_inp))
 
     true_output=data_inp[:,0]*data_inp[:,1]
+
+    if verb>2:
+        print('input data=',data_inp.shape,repr(data_inp[:,0]), repr(data_inp[:,1]))
+        print('true output=',true_output.shape,repr(true_output))
     #print('data_inp sample:\n',data_inp[:3,:3,:2],'\nprod:',true_output); kk
     bigD={'inp_udata': data_inp,'true_output':true_output}
  
     return bigD
-
-
 
 #...!...!....................
 def harvest_sampler_results(job,md,bigD,T0=None):  # many circuits
