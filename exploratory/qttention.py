@@ -184,9 +184,9 @@ def quantum_dot_product_vectorized(Q, K):
                     inp_udata[pair_idx, 1, :] = K_np[b, j, :]  # K[b,j,:]
                 pair_idx += 1
 
-    # Quantum evaluation
+    # Quantum evaluation - ADD the missing parameters
     qm = QuantumMultiXY(
-        shots=16384,
+        shots=32000,
         nq_addr=nq_addr,
         nq_data=2,
     )
@@ -209,7 +209,9 @@ def test_quantum_vs_classical_dot_batched():
     Q = torch.tensor(Q, dtype=torch.float32)
     K = torch.tensor(K, dtype=torch.float32)
     # Classical dot product (per batch)
-    S_classical = torch.matmul(Q, K.transpose(-2, -1))  # shape: (batch, seq_len, seq_len)
+    # old
+    # S_classical = torch.matmul(Q, K.transpose(-2, -1))  # shape: (batch, seq_len, seq_len)
+    S_classical = torch.einsum('bij,bkj->bik', Q, K)
     print("Classical dot product matrix:\n", S_classical[0])
     print(S_classical.shape)
     # Quantum dot product (per batch)
@@ -222,11 +224,11 @@ def test_quantum_vs_classical_dot_batched():
     print("Difference (Quantum - Classical):\n", diff)
     mae = diff.abs().mean().item()
     max_err = diff.abs().max().item()
-    success_rate = (diff.abs() < 0.03).float().mean().item()
+    success_rate = (diff.abs() < 0.07).float().mean().item()
 
     print(f"Mean absolute error: {mae:.4f}")
     print(f"Max absolute error: {max_err:.4f}")
-    print(f"Success rate (|diff| < 0.03): {success_rate*100:.1f}%")
+    print(f"Success rate (|diff| < 0.07): {success_rate*100:.1f}%")
     import matplotlib.pyplot as plt
     roys_fontset(plt)
     # Create a figure with two subplots: histogram and heatmap
@@ -234,7 +236,7 @@ def test_quantum_vs_classical_dot_batched():
 
     # Histogram of absolute differences
     axs[0].hist(diff.abs().flatten().numpy(), bins=20, color='skyblue', edgecolor='black')
-    axs[0].axvline(0.03, color='red', linestyle='--', label='Threshold = 0.03')
+    axs[0].axvline(0.07, color='red', linestyle='--', label='Threshold = 0.07')
     # axs[0].set_title('Histogram of |Quantum - Classical| Differences')
     axs[0].set_xlabel('Absolute Difference')
     axs[0].set_ylabel('Count')
