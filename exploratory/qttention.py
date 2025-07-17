@@ -13,9 +13,9 @@ here = os.path.dirname(__file__)
 # Go up one level to quantum-transformer, and add that:
 repo_pkg = os.path.abspath(os.path.join(here, os.pardir))
 sys.path.append(repo_pkg)
+from toolbox.Util_IOfunc import dateT2Str, iso_to_localtime
 from datacircuits.ParametricQCrankV2 import  ParametricQCrankV2 as QCrankV2, qcrank_reco_from_yields
 from datacircuits.qm import QuantumMultiplier
-from toolbox.Util_IOfunc import dateT2Str, iso_to_localtime
 from time import time, localtime,mktime
 import numpy as np
 import torch
@@ -28,13 +28,11 @@ class QuantumMultiXY:
     compute the batched XY product
     """
 
-    def __init__(self, shots: int = 1024, nq_addr: int = 6, nq_data: int = 2, 
-                 features: int = 2, batch_size: int = 1, backend=None, transpiler_seed=42):
+    def __init__(self, shots: int = 1024, nq_addr: int = 6,
+                  nq_data: int = 2, backend=None, transpiler_seed=42):
         self.shots = shots
         self.nq_addr = nq_addr      # Determines capacity: 2**nq_addr
         self.nq_data = nq_data      # Always 2 for vector pairs
-        self.features = features    # Feature dimension of each vector
-        self.batch_size = batch_size
         self.backend = backend if backend else AerSimulator()
         self.transpiler_seed = transpiler_seed
         
@@ -84,13 +82,6 @@ class QuantumMultiXY:
         Returns:
             numpy array of shape (batch_size, features) containing element-wise products
         """
-
-        expected_shape = (2**self.nq_addr, self.nq_data, self.features)
-        print(f"Input shape: {inp_udata.shape}")
-        print(f"Expected shape: {expected_shape}")
-        
-        if inp_udata.shape != expected_shape:
-            raise ValueError(f"Input shape {inp_udata.shape} doesn't match expected {expected_shape}")
         
         # Bind data to quantum circuit
         self.qcrankObj.bind_data(inp_udata)
@@ -120,7 +111,7 @@ class QuantumMultiXY:
         result_data = harvest_sampler_results(job, md, bigD, T0)
         
         # Return the dot product results
-        return result_data['rec_udata']  # Shape: (batch_size, features)
+        return result_data['rec_udata']  # Shape: (batch_size, 1, features)
 
 def harvest_sampler_results(job, md, bigD, T0=None):  # many circuits
     pmd = md['payload']
@@ -169,56 +160,50 @@ def harvest_sampler_results(job, md, bigD, T0=None):  # many circuits
 def quantum_dot_product_vectorized(Q, K):
     batch, seq_len, features = Q.shape
     
-    # Calculate total pairs needed
-    total_pairs = batch * seq_len * seq_len
+    # Convert to numpy
+    Q_np = Q.detach().numpy() if hasattr(Q, 'detach') else Q
+    K_np = K.detach().numpy() if hasattr(K, 'detach') else K
     
-    # Calculate required nq_addr such that 2**nq_addr >= total_pairs
+    total_pairs = batch * seq_len * seq_len
     nq_addr = int(np.ceil(np.log2(max(1, total_pairs))))
     max_entries = 2**nq_addr
-    
+
+    print(f"Computing Q·K^T with shape ({batch}, {seq_len}, {seq_len})")
     print(f"Total pairs needed: {total_pairs}")
     print(f"Using nq_addr: {nq_addr}")
-    print(f"Max entries (2**nq_addr): {max_entries}")
-    
-    # Prepare input data: shape (2**nq_addr, 2, features)
-    # nq_data = 2 means each entry has 2 vectors
-    # features is the third dimension (k in the error message)
+
+    # Prepare input data: shape (max_entries, 2, features)
     inp_udata = np.zeros((max_entries, 2, features))
     
     pair_idx = 0
     for b in range(batch):
-        for i in range(seq_len):
-            for j in range(seq_len):
+        for i in range(seq_len):  # Q rows
+            for j in range(seq_len):  # K rows
                 if pair_idx < max_entries:
-                    inp_udata[pair_idx, 0, :] = Q[b, i, :].numpy()  # Q vector
-                    inp_udata[pair_idx, 1, :] = K[b, j, :].numpy()  # K vector
+                    inp_udata[pair_idx, 0, :] = Q_np[b, i, :]  # Q[b,i,:]
+                    inp_udata[pair_idx, 1, :] = K_np[b, j, :]  # K[b,j,:]
                 pair_idx += 1
-    
-    # Initialize quantum multiplier
+
+    # Quantum evaluation
     qm = QuantumMultiXY(
-        shots=16384, 
-        nq_addr=nq_addr,  # This gives us 2**nq_addr processing capacity
-        nq_data=2,        # Always 2 (for vector pairs)
-        features=features, # Feature dimension
-        batch_size=1
+        shots=16384,
+        nq_addr=nq_addr,
+        nq_data=2,
     )
     
-    # Compute element-wise products for all pairs
-    # Output shape: (2**nq_addr, features)
     element_products = qm.evaluate(inp_udata)
+
+    # Sum to get dot products: Q[b,i,:] · K[b,j,:]
+    dot_products = np.sum(element_products[:total_pairs, 0, :], axis=-1)
+
+    # Reshape to attention matrix
+    attention_scores = dot_products.reshape(batch, seq_len, seq_len)
     
-    # Sum over features to get dot products
-    # Only take the first total_pairs results (ignore padding)
-    dot_products = np.sum(element_products[:total_pairs], axis=1)
-    
-    # Reshape back to attention matrix format
-    attention_scores = torch.tensor(dot_products).view(batch, seq_len, seq_len)
-    
-    return attention_scores
+    return torch.tensor(attention_scores, dtype=torch.float32)
 
 def test_quantum_vs_classical_dot_batched():
     torch.manual_seed(42)
-    batch, seq_len, features = 1, 6, 2
+    batch, seq_len, features = 2, 4, 2
     Q = np.random.uniform(-1, 1., size = (batch, seq_len, features))
     K = np.random.uniform(-1, 1., size = (batch, seq_len, features))
     Q = torch.tensor(Q, dtype=torch.float32)
@@ -230,7 +215,7 @@ def test_quantum_vs_classical_dot_batched():
     # Quantum dot product (per batch)
     # S_quantum = quantum_dot_product(Q, K)
     S_quantum = quantum_dot_product_vectorized(Q, K)  # shape: (batch, seq_len, seq_len)
-    print("Classical dot product matrix:\n", S_quantum[0])
+    print("Quantum dot product matrix:\n", S_quantum[0])
     print(S_quantum.shape)
     # Compare
     diff = S_quantum - S_classical
@@ -243,7 +228,7 @@ def test_quantum_vs_classical_dot_batched():
     print(f"Max absolute error: {max_err:.4f}")
     print(f"Success rate (|diff| < 0.03): {success_rate*100:.1f}%")
     import matplotlib.pyplot as plt
-
+    roys_fontset(plt)
     # Create a figure with two subplots: histogram and heatmap
     fig, axs = plt.subplots(1, 2, figsize=(13, 5))
 
@@ -266,7 +251,7 @@ def test_quantum_vs_classical_dot_batched():
     axs[1].set_ylabel('Q index')
 
     plt.tight_layout()
-    plt.savefig('quantum_classical_diff_combined.svg')
+    plt.savefig('exploratory/out/qttention.svg')
     plt.close()
 
 def roys_fontset(plt):
