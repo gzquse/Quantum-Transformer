@@ -15,7 +15,6 @@ from ._util import (
     rescale_data_to_angles,
     cnot_permutation
 )
-from qiskit_addon_cutting.instructions import CutWire
 
 class _DecoderQCRANK(ABC):
     '''Abstract base class for QCRANK data decoders.'''
@@ -46,7 +45,6 @@ class _DecoderQCRANK(ABC):
             t_out = [k + self.nq_addr for k in range(self.nq_data) if k != i]
             out[:, i] = marginal_distribution(dist, t_out)
         return out
-
 
 class QKAtan2DecoderQCRANK(_DecoderQCRANK):
     '''Qiskit compatible atan2 decoder for QCRANK.'''
@@ -97,7 +95,6 @@ class QKAtan2DecoderQCRANK(_DecoderQCRANK):
         for i, y in enumerate(yields):
             pdfs[:, i] = convert_shots_to_pdf(y, normalize=normalize)
         return pdfs
-
 
 class ParametrizedQCRANK:
     '''An object to handle the parametrized QCRANK circuits.'''
@@ -293,7 +290,6 @@ class ReducedQCRANK(ParametrizedQCRANK):
         for j in range(2**nq_addr):
             for i in range(nq_data):
                 self.circuit.ry(self._p[i][j], nq_addr + i)
-            # self.circuit.append(CutWire(), [nq_addr+i])
             for i in range(nq_data):
                 self.circuit.cx(
                     compute_control(j, nq_addr, 

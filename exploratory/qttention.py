@@ -9,9 +9,12 @@ from qiskit_aer import AerSimulator
 from qiskit_ibm_runtime.fake_provider import FakeMarrakesh
 from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2 as Sampler 
 from qiskit_ibm_runtime.options.sampler_options import SamplerOptions
+here = os.path.dirname(__file__)
+# Go up one level to quantum-transformer, and add that:
+repo_pkg = os.path.abspath(os.path.join(here, os.pardir))
+sys.path.append(repo_pkg)
 from datacircuits.ParametricQCrankV2 import  ParametricQCrankV2 as QCrankV2, qcrank_reco_from_yields
 from datacircuits.qm import QuantumMultiplier
-sys.path.insert(0, os.path.abspath(os.path.join(__file__,'..','..')))
 from toolbox.Util_IOfunc import dateT2Str, iso_to_localtime
 from time import time, localtime,mktime
 import numpy as np
