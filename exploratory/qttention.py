@@ -33,7 +33,7 @@ class QuantumMultiXY:
         self.shots = shots
         self.nq_addr = nq_addr      # Determines capacity: 2**nq_addr
         self.nq_data = nq_data      # Always 2 for vector pairs
-        self.backend = backend if backend else AerSimulator()
+        self.backend = backend if backend else AerSimulator(from_backend=FakeMarrakesh())
         self.transpiler_seed = transpiler_seed
         
         # Build template circuit for dot product computation
@@ -186,7 +186,7 @@ def quantum_dot_product_vectorized(Q, K):
 
     # Quantum evaluation - ADD the missing parameters
     qm = QuantumMultiXY(
-        shots=32000,
+        shots=3200000,
         nq_addr=nq_addr,
         nq_data=2,
     )
@@ -203,7 +203,7 @@ def quantum_dot_product_vectorized(Q, K):
 
 def test_quantum_vs_classical_dot_batched():
     torch.manual_seed(42)
-    batch, seq_len, features = 2, 4, 2
+    batch, seq_len, features = 10, 10, 10
     Q = np.random.uniform(-1, 1., size = (batch, seq_len, features))
     K = np.random.uniform(-1, 1., size = (batch, seq_len, features))
     Q = torch.tensor(Q, dtype=torch.float32)
@@ -232,28 +232,64 @@ def test_quantum_vs_classical_dot_batched():
     import matplotlib.pyplot as plt
     roys_fontset(plt)
     # Create a figure with two subplots: histogram and heatmap
-    fig, axs = plt.subplots(1, 2, figsize=(13, 5))
+    fig, axs = plt.subplots(1, 2, figsize=(11, 5))
 
     # Histogram of absolute differences
-    axs[0].hist(diff.abs().flatten().numpy(), bins=20, color='skyblue', edgecolor='black')
-    axs[0].axvline(0.07, color='red', linestyle='--', label='Threshold = 0.07')
-    # axs[0].set_title('Histogram of |Quantum - Classical| Differences')
+    abs_diff = diff.abs().flatten().numpy()
+    axs[0].hist(abs_diff, bins=20, color='skyblue', edgecolor='black')
+
+    # Compute statistics
+    mean = abs_diff.mean()
+    std = abs_diff.std()
+    q25 = np.quantile(abs_diff, 0.25)
+    q50 = np.quantile(abs_diff, 0.50)
+    q75 = np.quantile(abs_diff, 0.75)
+
+    # Mark mean and std
+    axs[0].axvline(mean, color='orange', linestyle='--', label=f'Mean = {mean:.3f}')
+    # axs[0].axvline(mean + std, color='red', linestyle=':', label=f'1σ = {mean+std:.3f}')
+    axs[0].axvline(mean - std, color='red', linestyle=':', label=f'1σ = {mean-std:.3f}')
+
+    # Mark quantiles
+    # axs[0].axvline(q25, color='green', linestyle='-.', label=f'25% = {q25:.3f}')
+    # axs[0].axvline(q50, color='purple', linestyle='-.', label=f'50% = {q50:.3f}')
+    axs[0].axvline(q75, color='brown', linestyle='-.', label=f'75% = {q75:.3f}')
+
     axs[0].set_xlabel('Absolute Difference')
     axs[0].set_ylabel('Count')
-    axs[0].set_yticks(range(0, 7))
-    axs[0].set_ylim(0, 6)
     axs[0].legend()
     axs[0].set_xlim(left=0)
 
     # Heatmap of the difference matrix for the first batch
-    im = axs[1].imshow(diff[0].numpy(), cmap='bwr', vmin=-0.05, vmax=0.05)
-    plt.colorbar(im, ax=axs[1], fraction=0.046, pad=0.04, label='Quantum - Classical')
+    err   = diff[0].numpy()                 # signed difference
+    vmax  = np.abs(err).max()               # largest absolute error
+    from matplotlib import colors, cm
+    # --- helper: brighten an existing colormap -----------------
+    def lighten_cmap(cmap_name="PuBu", alpha=.5):
+        """Return a lighter copy of *cmap_name* by mixing every colour with white.
+
+        alpha = 0 → original cmap,  alpha = 1 → pure white.
+        """
+        base   = cm.get_cmap(cmap_name, 256)
+        colors_array = base(np.linspace(0, 1, 256))
+        colors_array[:, :3] = (1 - alpha) * colors_array[:, :3] + alpha  # mix with white
+        return colors.ListedColormap(colors_array, name=f"light_{cmap_name}")
+
+    # -----------------------------------------------------------
+
+    err_abs = np.abs(diff[0].numpy())
+
+    vmin, vmax = 0, err_abs.max()             # full data range
+    light_PuBu = lighten_cmap("PuBu", alpha=.35)
+
+    im = axs[1].imshow(err_abs, cmap=light_PuBu, vmin=vmin, vmax=vmax)
+    plt.colorbar(im, ax=axs[1], fraction=0.046, pad=0.04)
     # axs[1].set_title('Difference Matrix (Quantum - Classical)')
     axs[1].set_xlabel('K index')
     axs[1].set_ylabel('Q index')
 
     plt.tight_layout()
-    plt.savefig('exploratory/out/qttention.svg')
+    plt.savefig('exploratory/out/qttention.pdf')
     plt.close()
 
 def roys_fontset(plt):
@@ -274,17 +310,17 @@ def roys_fontset(plt):
     font_small = 12
     font_medium = 13
     font_large = 14
-    plt.rc('font', size=font_small)          # controls default text sizes
-    plt.rc('axes', titlesize=font_small)    # fontsize of the axes title
-    plt.rc('axes', labelsize=font_small)    # fontsize of the x and y labels
-    plt.rc('xtick', labelsize=font_small)    # fontsize of the tick labels
-    plt.rc('ytick', labelsize=font_small)    # fontsize of the tick labels
+    plt.rc('font', size=font_large)          # controls default text sizes
+    plt.rc('axes', titlesize=font_large)    # fontsize of the axes title
+    plt.rc('axes', labelsize=font_large)    # fontsize of the x and y labels
+    plt.rc('xtick', labelsize=font_large)    # fontsize of the tick labels
+    plt.rc('ytick', labelsize=font_large)    # fontsize of the tick labels
     
     plt.rc('figure', titlesize=font_large)   # fontsize of the figure title
 
     # legend box
     plt.rc('legend', frameon=False)  # remove it the frame
-    plt.rc('legend', fontsize=font_small)    # legend fontsize
+    plt.rc('legend', fontsize=font_large)    # legend fontsize
     
 if __name__ == "__main__":
     test_quantum_vs_classical_dot_batched()
