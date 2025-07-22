@@ -32,6 +32,8 @@ from toolbox.Util_QiskitV2 import  circ_depth_aziz, harvest_circ_transpMeta, exp
 from qiskit_aer import AerSimulator
 from qiskit import transpile
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
+from qiskit_ionq import IonQProvider 
+import dotenv
 
 sys.path.append(os.path.abspath("/qcrank_light"))
 from datacircuits.ParametricQCrankV2 import  ParametricQCrankV2 as QCrankV2, qcrank_reco_from_yields
@@ -66,6 +68,7 @@ def commandline_parser(backName="aer_ideal",provName="local_sim"):
     '''there are 3 types of backend
     - run by local Aer:  ideal  or  fake_kyoto
     - submitted to IBM: ibm_kyoto
+    - submitted to IonQ: aria-1
     '''
 
     args = parser.parse_args()
@@ -73,7 +76,8 @@ def commandline_parser(backName="aer_ideal",provName="local_sim"):
     args.provider=provName
     if 'ibm' in args.backend:
         args.provider='IBMQ_cloud'
-
+    elif 'ionq' in args.backend:
+        args.provider='IONQ_cloud'
     args.numQubits=[args.numQaddr,2]
     for arg in vars(args):
         print( 'myArgs:',arg, getattr(args, arg))
@@ -126,6 +130,8 @@ def harvest_submitMeta(job,md,args):
         md['hash']=sd['job_id'].replace('-','')[3:9] # those are still visible on the IBMQ-web
         if args.provider=='IBMQ_cloud':
             tag=args.backend.split('_')[1]
+        if args.provider=="IONQ_cloud":
+            tag=args.backend.split('_')[0]
         if args.provider=="IQM_cloud":
             tag=args.backend.split('_')[0]
         if args.provider=="local_sim":
@@ -291,13 +297,18 @@ if __name__ == "__main__":
         transBackN='ideal'
         backend = AerSimulator()
     else:
-        print('M: activate QiskitRuntimeService() ... backedn:',args.backend)
+        print('M: activate QiskitRuntimeService() ... backend:',args.backend)
         service = QiskitRuntimeService()
         if  'fake' in args.backend:
             transBackN=args.backend.replace('fake_','ibm_')
             hw_backend = service.backend(transBackN)
             backend = AerSimulator.from_backend(hw_backend) # overwrite ideal-backend
             print('fake noisy backend =', backend.name)
+        elif 'ionq' in args.backend:
+            dotenv.load_dotenv()
+            api_key = os.getenv('IONQ_API_KEY')
+            provider = IonQProvider(api_key)
+            backend = provider.get_backend("qpu.aria-1", gateset="native")
         else:
             outPath=os.path.join(args.basePath,'jobs')
             assert 'ibm' in args.backend
@@ -316,6 +327,7 @@ if __name__ == "__main__":
     circ_depth_aziz(qcT,'transpiled')
     harvest_circ_transpMeta(qcT,expMD,backend.name)
     print('M: run on backend:',backend.name,outPath)
+    print(outPath)
     assert os.path.exists(outPath)
     
     # -------- bind the data to parametrized circuit  -------
@@ -355,10 +367,13 @@ if __name__ == "__main__":
         options.dynamical_decoupling.extra_slack_distribution = 'middle'
         options.dynamical_decoupling.scheduling_method = 'alap'
         print('M: enabled DD')
-
-    sampler = Sampler(mode=backend, options=options)
     T0=time()
-    job = sampler.run(tuple(qcEL))
+    
+    if 'ionq' not in args.backend:
+        sampler = Sampler(mode=backend, options=options)
+        job = sampler.run(tuple(qcEL))
+    else:
+        job = backend.run(qcEL, shots=numShots)
    
     harvest_submitMeta(job,expMD,args)    
     if args.verb>1: pprint(expMD)

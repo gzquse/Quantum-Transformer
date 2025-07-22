@@ -8,8 +8,8 @@ stop-me
 basePath=../paper_AAAI25/data2/
 nSamp=30
 
-backN=ibm_fez
-backN=ibm_kingston ; nqaL=" 2 3 4 5 6   "  
+# backN=ibm_fez
+# backN=ibm_kingston ; nqaL=" 2 3 4 5 6   "  
 
 #backN=aer_ideal  ; nqaL=" 2 3 4 5 6 7   "  
 
