@@ -33,7 +33,8 @@ class QuantumMultiXY:
         self.shots = shots
         self.nq_addr = nq_addr      # Determines capacity: 2**nq_addr
         self.nq_data = nq_data      # Always 2 for vector pairs
-        self.backend = backend if backend else AerSimulator(from_backend=FakeMarrakesh())
+        self.backend = backend if backend else AerSimulator() # ideal
+        # AerSimulator.from_backend(FakeMarrakesh())  # or use a real backend
         self.transpiler_seed = transpiler_seed
         
         # Build template circuit for dot product computation
@@ -67,10 +68,12 @@ class QuantumMultiXY:
         for i in range(nq_addr):     qcP.measure(qra[i],nq_addr-i)  # order must be reversed
         # print(qcP)
         # Transpile the circuit
+        depth = qcP.depth()
+        print("QuantumMultiXY circuit depth:", depth)
         qcT = transpile(qcP, self.backend, optimization_level=3, 
                        seed_transpiler=self.transpiler_seed)
         self.qcrankObj.circuit = qcT
-    
+        
     def evaluate(self, inp_udata):
         """
         Evaluate batched element-wise multiplications
@@ -309,7 +312,7 @@ def roys_fontset(plt):
 
     font_small = 12
     font_medium = 13
-    font_large = 14
+    font_large = 18
     plt.rc('font', size=font_large)          # controls default text sizes
     plt.rc('axes', titlesize=font_large)    # fontsize of the axes title
     plt.rc('axes', labelsize=font_large)    # fontsize of the x and y labels
