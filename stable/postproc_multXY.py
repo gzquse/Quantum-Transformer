@@ -37,7 +37,6 @@ def get_parser():
       
     print( 'myArg-program:',parser.prog)
     for arg in vars(args):  print( 'myArg:',arg, getattr(args, arg))
-    
     assert os.path.exists(args.dataPath)
     assert os.path.exists(args.outPath)
     return args
@@ -50,18 +49,18 @@ def postproc_multXY(bigD,md):
     rdata=expD['rec_udata'].flatten()
     tdata=expD['true_output'].flatten()
     #tdata=expD['inp_udata']
-
+    print(rdata)
     #print('tdata:',tdata,'\nrdata:',rdata)
     
     #1print('tdata sample:',tdata[:10]);aa
     elm=compute_ellipse(tdata,rdata)
     pom['hw_calib']='none'; pom['ampl_fact']=1.
-    if 1:  # hack to do self-calibration
-        expD['rec_udata']*=elm['ampl_fact']  # changes DATA
-        rdata=expD['rec_udata'].flatten()
-        tdata=expD['true_output'].flatten()
-        pom['hw_calib']='auto'
-        pom['ampl_fact']=elm['ampl_fact']
+    # if 1:  # hack to do self-calibration
+    #     expD['rec_udata']*=elm['ampl_fact']  # changes DATA
+    #     rdata=expD['rec_udata'].flatten()
+    #     tdata=expD['true_output'].flatten()
+    #     pom['hw_calib']='auto'
+    #     pom['ampl_fact']=elm['ampl_fact']
                 
     res_data = rdata - tdata
     mean = np.mean(res_data)

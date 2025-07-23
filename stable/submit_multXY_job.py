@@ -64,7 +64,9 @@ def commandline_parser(backName="aer_ideal",provName="local_sim"):
     parser.add_argument( "-B","--noBarrier", action='store_true', default=False, help="remove all bariers from the circuit ")
     parser.add_argument( "-E","--executeCircuit", action='store_true', default=False, help="may take long time, test before use ")
     parser.add_argument( "-e","--exportQPY", action='store_true', default=False, help="exprort parametrized circuit as QPY ")
-    
+
+    parser.add_argument( "-d","--dryRun",  action='store_true', default=False, help="enables dry-run mode, no job submission, just prints meta-data")
+    parser.add_argument("--id", default=None, type=str, help="(optional) job id to be used in dry-run mode, if not given, random job id is generated")
     '''there are 3 types of backend
     - run by local Aer:  ideal  or  fake_kyoto
     - submitted to IBM: ibm_kyoto
@@ -190,22 +192,27 @@ def construct_random_inputs(md,verb=1, seed=None):
  
     return bigD
 
-
+def ionq_counts_to_bin(counts_dict, num_clbits):
+    """Convert IonQ hex keys to Qiskit-style binary keys."""
+    return {format(int(k, 16), f'0{num_clbits}b'): v for k, v in counts_dict.items()}
 
 #...!...!....................
 def harvest_sampler_results(job,md,bigD,T0=None):  # many circuits
     pmd=md['payload']
     qa={}
     jobRes=job.result()
-   
-    jobMetr=job.metrics()    
     
     if T0!=None:  # when run locally
         elaT=time()-T0
         print(' job done, elaT=%.1f min'%(elaT/60.))
         qa['running_duration']=elaT
         qa['timestamp_running']=dateT2Str(localtime() )
-
+    elif 'ionq' in md['submit']['job_type']:  # ionq backend
+        # IonQ job timing
+        exec_time_sec = str(job._metadata.get('execution_time') / 1000)
+        start = str(job._metadata.get('start') / 1000)
+        qa['timestamp_running'] = start
+        qa['running_duration'] = exec_time_sec
     else:
         jobMetr=job.metrics()
         print('HSR:jobMetr:',jobMetr)
@@ -221,23 +228,29 @@ def harvest_sampler_results(job,md,bigD,T0=None):  # many circuits
         #    qa['one_circ_depth']=None
                 
     #1pprint(jobRes[0])
-    nCirc=len(jobRes)  # number of circuit in the job
-    jstat=str(job.status())
-    
-    countsL=[ jobRes[i].data.c.get_counts() for i in range(nCirc) ]
-
-    # collect job performance info
-    res0cl=jobRes[0].data.c
-    qa['status']=jstat
-    qa['num_circ']=nCirc
-    qa['shots']=res0cl.num_shots
-    
-    qa['num_clbits']=res0cl.num_bits
+    if hasattr(jobRes, "results"):  # IonQ result
+        nCirc = len(jobRes.results)
+        num_clbits = jobRes.results[0].data.metadata['memory_slots']
+        countsL = [
+            ionq_counts_to_bin(exp.data.counts, num_clbits)
+            for exp in jobRes.results
+        ]
+        qa['status'] = jobRes.success
+        qa['num_circ'] = nCirc
+        qa['shots'] = jobRes.results[0].shots
+        qa['num_clbits'] = num_clbits
+    else:  # Qiskit result
+        nCirc = len(jobRes)
+        countsL = [jobRes[i].data.c.get_counts() for i in range(nCirc)]
+        qa['status'] = str(job.status())
+        qa['num_circ'] = nCirc
+        qa['shots'] = jobRes[0].data.c.num_shots
+        qa['num_clbits'] = jobRes[0].data.c.num_bits
     
     print('job QA'); pprint(qa)
     md['job_qa']=qa
     bigD['rec_udata'], bigD['rec_udata_err'] =  qcrank_reco_from_yields(countsL,pmd['nq_addr'],pmd['nq_data'])
-
+    print(bigD)
     return bigD
 
 
@@ -305,10 +318,15 @@ if __name__ == "__main__":
             backend = AerSimulator.from_backend(hw_backend) # overwrite ideal-backend
             print('fake noisy backend =', backend.name)
         elif 'ionq' in args.backend:
+            outPath=os.path.join(args.basePath,'jobs')
             dotenv.load_dotenv()
             api_key = os.getenv('IONQ_API_KEY')
             provider = IonQProvider(api_key)
             backend = provider.get_backend("qpu.aria-1", gateset="native")
+            if 'ionqlocal' in args.backend:
+                backend = provider.get_backend("simulator")
+            runLocal=False
+                
         else:
             outPath=os.path.join(args.basePath,'jobs')
             assert 'ibm' in args.backend
@@ -368,14 +386,16 @@ if __name__ == "__main__":
         options.dynamical_decoupling.scheduling_method = 'alap'
         print('M: enabled DD')
     T0=time()
-    
-    if 'ionq' not in args.backend:
-        sampler = Sampler(mode=backend, options=options)
-        job = sampler.run(tuple(qcEL))
-    else:
-        job = backend.run(qcEL, shots=numShots)
-   
-    harvest_submitMeta(job,expMD,args)    
+    if not args.dryRun:
+        if 'ionq' not in args.backend:
+            sampler = Sampler(mode=backend, options=options)
+            job = sampler.run(tuple(qcEL))
+        else:
+            job = backend.run(qcEL, shots=numShots)
+    elif args.dryRun:
+        job = backend.retrieve_job(args.id)
+        expMD['submit']['job_type']='ionq'
+    harvest_submitMeta(job,expMD,args)   
     if args.verb>1: pprint(expMD)
     
     if runLocal:
@@ -389,10 +409,11 @@ if __name__ == "__main__":
     else:
         #...... WRITE  SUBMIT OUTPUT .........
         outF=os.path.join(outPath,expMD['short_name']+'.ibm.h5')
+        if 'ionq' in args.backend:
+            outF=os.path.join(outPath,expMD['short_name']+'.ionq.h5')
+            print('   ./retrieve_ionq_job.py  --basePath  $basePath --expName   %s   \n'%(expMD['short_name'] ))
+        else:
+            print('   ./retrieve_ibmq_job.py  --basePath  $basePath --expName   %s   \n'%(expMD['short_name'] ))
         write4_data_hdf5(expD,outF,expMD)
-        print('   ./retrieve_ibmq_job.py  --basePath  $basePath --expName   %s   \n'%(expMD['short_name'] ))
-
-    
-
-
-    
+        
+        
