@@ -32,7 +32,7 @@ from toolbox.Util_QiskitV2 import  circ_depth_aziz, harvest_circ_transpMeta, exp
 from qiskit_aer import AerSimulator
 from qiskit import transpile
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
-from qiskit_ionq import IonQProvider 
+from qiskit_ionq import IonQProvider, ErrorMitigation 
 import dotenv
 
 sys.path.append(os.path.abspath("/qcrank_light"))
@@ -193,7 +193,7 @@ def construct_random_inputs(md,verb=1, seed=None):
     return bigD
 
 def ionq_counts_to_bin(counts_dict, num_clbits):
-    """Convert IonQ hex keys to Qiskit-style binary keys."""
+    """Convert IonQ hex keys to Qiskit-style binary keys and reverse bit order."""
     return {format(int(k, 16), f'0{num_clbits}b'): v for k, v in counts_dict.items()}
 
 #...!...!....................
@@ -250,7 +250,6 @@ def harvest_sampler_results(job,md,bigD,T0=None):  # many circuits
     print('job QA'); pprint(qa)
     md['job_qa']=qa
     bigD['rec_udata'], bigD['rec_udata_err'] =  qcrank_reco_from_yields(countsL,pmd['nq_addr'],pmd['nq_data'])
-    print(bigD)
     return bigD
 
 
@@ -324,6 +323,7 @@ if __name__ == "__main__":
             provider = IonQProvider(api_key)
             backend = provider.get_backend("qpu.aria-1", gateset="native")
             if 'ionqlocal' in args.backend:
+                outPath=os.path.join(args.basePath,'meas')
                 backend = provider.get_backend("simulator")
             runLocal=False
                 
@@ -391,14 +391,15 @@ if __name__ == "__main__":
             sampler = Sampler(mode=backend, options=options)
             job = sampler.run(tuple(qcEL))
         else:
-            job = backend.run(qcEL, shots=numShots)
+            job = backend.run(qcEL, shots=numShots,
+                               error_mitigation=ErrorMitigation.DEBIASING)
     elif args.dryRun:
         job = backend.retrieve_job(args.id)
         expMD['submit']['job_type']='ionq'
     harvest_submitMeta(job,expMD,args)   
     if args.verb>1: pprint(expMD)
     
-    if runLocal:
+    if runLocal or 'ionqlocal' in args.backend:
         harvest_sampler_results(job,expMD,expD,T0=T0)
         print('M: got results')
         #...... WRITE  MEAS OUTPUT .........

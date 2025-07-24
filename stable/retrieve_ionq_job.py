@@ -75,7 +75,7 @@ if __name__ == "__main__":
     backend = provider.get_backend("qpu.aria-1")
     job = backend.retrieve_job(jid)  
     jstat=job.status()
-    print('M: got results')
+    print('M: got results', jstat)
 
     harvest_sampler_results(job,expMD,expD)
    
