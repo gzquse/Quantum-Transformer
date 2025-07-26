@@ -192,10 +192,6 @@ def construct_random_inputs(md,verb=1, seed=None):
  
     return bigD
 
-def ionq_counts_to_bin(counts_dict, num_clbits):
-    """Convert IonQ hex keys to Qiskit-style binary keys and reverse bit order."""
-    return {format(int(k, 16), f'0{num_clbits}b'): v for k, v in counts_dict.items()}
-
 #...!...!....................
 def harvest_sampler_results(job,md,bigD,T0=None):  # many circuits
     pmd=md['payload']
@@ -207,7 +203,7 @@ def harvest_sampler_results(job,md,bigD,T0=None):  # many circuits
         print(' job done, elaT=%.1f min'%(elaT/60.))
         qa['running_duration']=elaT
         qa['timestamp_running']=dateT2Str(localtime() )
-    elif 'ionq' in md['submit']['job_type']:  # ionq backend
+    elif 'ionq' in md['submit']['backend']:  # ionq backend
         # IonQ job timing
         exec_time_sec = str(job._metadata.get('execution_time') / 1000)
         start = str(job._metadata.get('start') / 1000)
@@ -226,19 +222,15 @@ def harvest_sampler_results(job,md,bigD,T0=None):  # many circuits
         #    qa['one_circ_depth']=jobMetr['circuit_depths'][0]
         #else:
         #    qa['one_circ_depth']=None
-                
     #1pprint(jobRes[0])
     if hasattr(jobRes, "results"):  # IonQ result
         nCirc = len(jobRes.results)
         num_clbits = jobRes.results[0].data.metadata['memory_slots']
-        countsL = [
-            ionq_counts_to_bin(exp.data.counts, num_clbits)
-            for exp in jobRes.results
-        ]
         qa['status'] = jobRes.success
         qa['num_circ'] = nCirc
         qa['shots'] = jobRes.results[0].shots
         qa['num_clbits'] = num_clbits
+        countsL = job.get_counts()
     else:  # Qiskit result
         nCirc = len(jobRes)
         countsL = [jobRes[i].data.c.get_counts() for i in range(nCirc)]
@@ -321,7 +313,7 @@ if __name__ == "__main__":
             dotenv.load_dotenv()
             api_key = os.getenv('IONQ_API_KEY')
             provider = IonQProvider(api_key)
-            backend = provider.get_backend("qpu.aria-1", gateset="native")
+            backend = provider.get_backend("qpu.aria-1")
             if 'ionqlocal' in args.backend:
                 outPath=os.path.join(args.basePath,'meas')
                 backend = provider.get_backend("simulator")
@@ -333,8 +325,9 @@ if __name__ == "__main__":
             backend = service.backend(args.backend)  # overwrite ideal-backend
             print('use true HW backend =', backend.name)          
             runLocal=False
- 
-        qcT =  transpile(qcP, backend,optimization_level=3, seed_transpiler=args.transpSeed)
+        gate_names = set(instruction[0].name for instruction in qcP.data)
+        print(f"Unique gates: {gate_names}")
+        qcT =  transpile(qcP, backend, optimization_level=3, seed_transpiler=args.transpSeed)
         qcrankObj.circuit=qcT  # pass transpiled parametric circuit back
         cxDepth=qcT.depth(filter_function=lambda x: x.operation.name == 'cz')
         print('.... PARAMETRIZED Transpiled (%s) CIRCUIT .............., cx-depth=%d'%(backend.name,cxDepth))
@@ -392,7 +385,7 @@ if __name__ == "__main__":
             job = sampler.run(tuple(qcEL))
         else:
             job = backend.run(qcEL, shots=numShots,
-                               error_mitigation=ErrorMitigation.DEBIASING)
+                               error_mitigation=ErrorMitigation.NO_DEBIASING)
     elif args.dryRun:
         job = backend.retrieve_job(args.id)
         expMD['submit']['job_type']='ionq'

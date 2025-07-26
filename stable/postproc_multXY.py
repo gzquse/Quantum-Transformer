@@ -49,8 +49,6 @@ def postproc_multXY(bigD,md):
     rdata=expD['rec_udata'].flatten()
     tdata=expD['true_output'].flatten()
     #tdata=expD['inp_udata']
-    print(rdata)
-    #print('tdata:',tdata,'\nrdata:',rdata)
     
     #1print('tdata sample:',tdata[:10]);aa
     elm=compute_ellipse(tdata,rdata)

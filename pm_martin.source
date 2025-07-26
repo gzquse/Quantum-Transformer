@@ -7,9 +7,11 @@ conda activate $SCRATCH/cudaq
 # .  $HOME/conda/etc/profile.d/conda.sh
 # conda activate qiskit
 
-export basePath="/pscratch/sd/g/gzquse/quantum-transformer/out"
+export basePath="/pscratch/sd/g/gzquse/quantum-transformer/stable/out"
 # export basePath="/lustre/work/ziqguo/quantum-transformer/stable/out"
 export QISKIT_IBM_CHANNEL="ibm_cloud"
 export QISKIT_IBM_TOKEN="lH9XDzWWzn3D8NrsIddW9VLiOuR2U-RHuvSco5eIRQ2o"
 export QISKIT_IBM_INSTANCE="crn:v1:bluemix:public:quantum-computing:us-east:a/27c8ca4267f34595b5f42e5fd07df8e4:aeb7ea98-ba94-4cc0-8e7f-8c8f95b47283::"
 export QISKIT_IBM_NAME="martin"
+
+export IONQ_API_KEY="xmWCkOA5c9tZj3PTRFKwmzPR7jFAo7gI"
