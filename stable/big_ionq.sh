@@ -12,7 +12,7 @@ nSamp=30
 # backN=ibm_kingston ; nqaL=" 2 3 4 5 6   "  
 
 #backN=aer_ideal  ; nqaL=" 2 3 4 5 6 7   "  
-backN=ionq; nqaL=" 2 3 4 5 6"
+backN=ionq; nqaL=" 5 6"
 echo bp=$basePath  nqaL=$nqaL
 
 
@@ -25,11 +25,11 @@ for nqa in $nqaL; do
 
     echo expName=$expName shots=$nshot
   
-    ./submit_multXY_job.py  --backend $backN --basePath  $basePath  --numQaddr $nqa --numSample $nSamp --numShot ${nshot} --expName $expName  --useRC  -E # ; continue
+    # ./submit_multXY_job.py  --backend $backN --basePath  $basePath  --numQaddr $nqa --numSample $nSamp --numShot ${nshot} --expName $expName  --useRC  -E # ; continue
 
-    # ./retrieve_ibmq_job.py  --basePath  $basePath  --expName $expName 
+    ./retrieve_ionq_job.py  --basePath  $basePath  --expName $expName 
 
-    # ./postproc_multXY.py  --basePath  $basePath  --expName  $expName  -p a c
+    ./postproc_multXY.py  --basePath  $basePath  --expName  $expName  -p a c
        
     echo "dealt with job for ${nqa} qubits, shots=$nshot"
     echo
