@@ -12,7 +12,7 @@ nSamp=30
 # backN=ibm_kingston ; nqaL=" 2 3 4 5 6   "  
 
 #backN=aer_ideal  ; nqaL=" 2 3 4 5 6 7   "  
-backN=ionq; nqaL=" 4 5"
+backN=ionq; nqaL=" 5 6"
 echo bp=$basePath  nqaL=$nqaL
 
 

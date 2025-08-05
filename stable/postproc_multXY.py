@@ -53,7 +53,7 @@ def postproc_multXY(bigD,md):
     #1print('tdata sample:',tdata[:10]);aa
     elm=compute_ellipse(tdata,rdata)
     pom['hw_calib']='none'; pom['ampl_fact']=1.
-    if 'ionq' not in md['submit']['backend']:  # hack to do self-calibration
+    if 1:  # hack to do self-calibration
         expD['rec_udata']*=elm['ampl_fact']  # changes DATA
         rdata=expD['rec_udata'].flatten()
         tdata=expD['true_output'].flatten()
